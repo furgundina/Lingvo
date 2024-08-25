@@ -1,0 +1,117 @@
+#Collab_version
+import pandas as pd
+
+# Путь к  файлу на Google Диске
+file_path = '/content/drive/MyDrive/cognate1.xlsx'
+
+#  данные из Excel
+cognates_matrix = pd.read_excel(file_path)
+
+# Проверка первых нескольких строк и типов данных
+print(cognates_matrix.head())
+print(cognates_matrix.dtypes)
+# Преобразование все данные в числовой формат, не вызывая ошибки при этом
+cognates_matrix = cognates_matrix.apply(pd.to_numeric, errors='coerce')
+
+# Проверка после преобразования
+print(cognates_matrix.head())
+print(cognates_matrix.dtypes)
+#  пропущенные значения
+cognates_matrix = cognates_matrix.fillna(0)
+
+#  максимальное значение
+max_value = cognates_matrix.max().max()
+
+#  значения в процентах и округление до целых чисел
+cognates_matrix_normalized = (cognates_matrix / max_value) * 100
+cognates_matrix_normalized = cognates_matrix_normalized.round(0).astype(int)
+
+#  DataFrame для сохранения
+with_percent = pd.DataFrame()
+
+# Форматирование данных
+for column in cognates_matrix.columns:
+    formatted_column = (
+        cognates_matrix[column].astype(int).astype(str) + ' (' +
+        cognates_matrix_normalized[column].astype(str) + '%)'
+    )
+    with_percent[column] = formatted_column
+
+# Сохранение в Excel
+output_path = '/content/drive/MyDrive/cognates_matrix_formatted.xlsx'
+with_percent.to_excel(output_path, index=False)
+
+from google.colab import drive
+drive.mount('/content/drive')
+import pandas as pd
+
+# Пути к файлам на Google Диске
+file_glotto = '/content/drive/MyDrive/glottochronology.xlsx'
+file_morphology = '/content/drive/MyDrive/morrhology.xlsx'
+file_cognates = '/content/drive/MyDrive/cognates_matrix_formatted.xlsx'
+# Загрузка данных с метками
+glotto_df = pd.read_excel(file_glotto, index_col=0)
+morphology_df = pd.read_excel(file_morphology, index_col=0)
+cognates_df = pd.read_excel(file_cognates, index_col=0)
+# Загрузка данных
+glotto_df = pd.read_excel(file_glotto)
+morphology_df = pd.read_excel(file_morphology)
+cognates_df = pd.read_excel(file_cognates)
+print(glotto_df.head())
+print(morphology_df.head())
+print(cognates_df.head())
+
+
+# Преобразование данных в числовой формат, если это необходимо
+glotto_df = glotto_df.apply(pd.to_numeric, errors='coerce').fillna(0)
+morphology_df = morphology_df.apply(pd.to_numeric, errors='coerce').fillna(0)
+cognates_df = cognates_df.apply(pd.to_numeric, errors='coerce').fillna(0)
+# Определите максимальные размеры
+max_rows = max(glotto_df.shape[0], morphology_df.shape[0], cognates_df.shape[0])
+max_cols = max(glotto_df.shape[1], morphology_df.shape[1], cognates_df.shape[1])
+
+# Расширение матриц
+def expand_matrix(df, max_rows, max_cols):
+    rows_to_add = max_rows - df.shape[0]
+    cols_to_add = max_cols - df.shape[1]
+
+    # Добавляем строки с нулями, если необходимо
+    if rows_to_add > 0:
+        df = pd.concat([df, pd.DataFrame(0, index=np.arange(rows_to_add), columns=df.columns)], ignore_index=True)
+
+    # Добавляем столбцы с нулями, если необходимо
+    if cols_to_add > 0:
+        df = pd.concat([df, pd.DataFrame(0, index=df.index, columns=np.arange(cols_to_add))], axis=1)
+
+    return df
+
+glotto_df = extend_matrix(glotto_df, max_rows, max_cols)
+morphology_df = extend_matrix(morphology_df, max_rows, max_cols)
+cognates_df = extend_matrix(cognates_df, max_rows, max_cols)
+
+# Проверка размеров
+print(glotto_df.shape)
+print(morphology_df.shape)
+print(cognates_df.shape)
+# Проверка на совпадение индексов и колонок
+assert glotto_df.shape == morphology_df.shape == cognates_df.shape, "Матрицы должны иметь одинаковый размер."
+
+# Создание суммарной матрицы
+total_matrix = glotto_df + morphology_df + cognates_df
+
+# Проверка итоговой матрицы
+print(total_matrix.head())
+
+output_path = '/content/drive/MyDrive/total_matrix.xlsx'
+!pip install openpyxl # Сохранение итоговой матрицы в файл Excel
+total_matrix.to_excel(output_path, index=True, engine='openpyxl')
+print(f"Матрица успешно сохранена в {output_path}")
+
+import seaborn as sns #для наглядности и к фин коду не относится
+import matplotlib.pyplot as plt
+
+plt.figure(figsize=(10, 8))
+sns.heatmap(total_matrix, annot=True, fmt=".1f", cmap="viridis")
+plt.title("Тепловая карта итоговой матрицы")
+plt.show()
+
