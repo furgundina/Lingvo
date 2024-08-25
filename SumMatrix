@@ -1,1 +1,54 @@
+import pandas as pd
 
+# Пути к файлам на DRIVE
+file_glotto = '/content/drive/MyDrive/glottochronology.xlsx'
+file_morphology = '/content/drive/MyDrive/morrhology.xlsx'
+file_cognates = '/content/drive/MyDrive/cognates_matrix_formatted.xlsx'
+
+# Загрузка данных с метками
+glotto_df = pd.read_excel(file_glotto, index_col=0)
+morphology_df = pd.read_excel(file_morphology, index_col=0)
+cognates_df = pd.read_excel(file_cognates, index_col=0)
+
+# Преобразование данных в числовой формат, если это необходимо
+glotto_df = glotto_df.apply(pd.to_numeric, errors='coerce').fillna(0)
+morphology_df = morphology_df.apply(pd.to_numeric, errors='coerce').fillna(0)
+cognates_df = cognates_df.apply(pd.to_numeric, errors='coerce').fillna(0)
+
+# Определение максимальных размеров
+max_rows = max(glotto_df.shape[0], morphology_df.shape[0], cognates_df.shape[0])
+max_cols = max(glotto_df.shape[1], morphology_df.shape[1], cognates_df.shape[1])
+
+# Функция для расширения матриц
+def expand_matrix(df, max_rows, max_cols):
+    rows_to_add = max_rows - df.shape[0]
+    cols_to_add = max_cols - df.shape[1]
+    
+    # Добавляем строки с нулями, если необходимо
+    if rows_to_add > 0:
+        df = pd.concat([df, pd.DataFrame(0, index=np.arange(rows_to_add), columns=df.columns)], ignore_index=True)
+    
+    # Добавляем столбцы с нулями, если необходимо
+    if cols_to_add > 0:
+        df = pd.concat([df, pd.DataFrame(0, index=df.index, columns=np.arange(df.shape[1], df.shape[1] + cols_to_add))], axis=1)
+    
+    return df
+
+# Расширение всех матриц до максимального размера
+glotto_df = expand_matrix(glotto_df, max_rows, max_cols)
+morphology_df = expand_matrix(morphology_df, max_rows, max_cols)
+cognates_df = expand_matrix(cognates_df, max_rows, max_cols)
+
+# Проверка на совпадение размеров
+assert glotto_df.shape == morphology_df.shape == cognates_df.shape, "Матрицы должны иметь одинаковый размер."
+
+# Создание суммарной матрицы
+total_matrix = glotto_df + morphology_df + cognates_df
+
+# Проверка итоговой матрицы
+print(total_matrix.head())
+
+# Сохранение итоговой матрицы в файл Excel
+output_path = '/content/drive/MyDrive/total_matrix.xlsx' 
+total_matrix.to_excel(output_path, index=True, engine='openpyxl')
+print(f"Матрица успешно сохранена в {output_path}")
