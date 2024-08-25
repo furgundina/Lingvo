@@ -1,0 +1,41 @@
+import pandas as pd
+
+# Путь к  файлу на Google Диске
+file_path = '/content/drive/MyDrive/cognate1.xlsx'
+
+#  данные из Excel
+cognates_matrix = pd.read_excel(file_path)
+
+# Проверка первых нескольких строк и типов данных
+print(cognates_matrix.head())
+print(cognates_matrix.dtypes)
+# Преобразование все данные в числовой формат, не вызывая ошибки при этом
+cognates_matrix = cognates_matrix.apply(pd.to_numeric, errors='coerce')
+
+# Проверка после преобразования
+print(cognates_matrix.head())
+print(cognates_matrix.dtypes)
+#  пропущенные значения
+cognates_matrix = cognates_matrix.fillna(0)
+
+#  максимальное значение
+max_value = cognates_matrix.max().max()
+
+# Нормализирую значения в процентах и округлите до целых чисел
+cognates_matrix_normalized = (cognates_matrix / max_value) * 100
+cognates_matrix_normalized = cognates_matrix_normalized.round(0).astype(int)
+
+# Создание DataFrame для сохранения
+with_percent = pd.DataFrame()
+
+# Форматирование данных
+for column in cognates_matrix.columns:
+    formatted_column = (
+        cognates_matrix[column].astype(int).astype(str) + ' (' +
+        cognates_matrix_normalized[column].astype(str) + '%)'
+    )
+    with_percent[column] = formatted_column
+
+# Сохранение в Excel
+output_path = '/content/drive/MyDrive/cognates_matrix_formatted.xlsx'
+with_percent.to_excel(output_path, index=False)
